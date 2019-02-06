@@ -99,23 +99,18 @@ func getServiceKeys(client kubernetes.Interface, services GroupedServices) (Serv
 
 func registerServices(registry *Registry, services GroupedServices, serviceKeys ServiceKeys) error {
 	for namespace, services := range services {
-		switch len(services) {
-		case 1:
-			service := services[0]
+		for i, service := range services {
 			keys := serviceKeys[namespace][service.Name]
+			_ = i
 			if _, err := registry.RegisterUpstream(&Upstream{
 				Name:                service.Name,
-				Username:            service.Namespace,
+				Username:            service.Name,
 				Address:             service.Spec.ClusterIP,
 				SSHPiperPrivateKey:  keys.SSHPiperPrivateKey,
 				DownstreamPublicKey: keys.DownstreamPublicKey,
 			}); err != nil {
 				return err
 			}
-		case 2:
-			logger.Info("Registration process is skipped. There are two or more services using port for service in namespace.\n", zap.String("namespace", namespace), zap.Int32("port", SSHServicePort))
-		default:
-			continue
 		}
 	}
 	return nil
