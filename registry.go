@@ -125,7 +125,7 @@ func (r *Registry) RegisterUpstream(upstream *Upstream) (*Upstream, error) {
 		if rec != nil {
 			upstreamID = rec.Id
 		} else {
-			if upstreamID, err = u.Post(&crud.UpstreamRecord{Name: upstream.Name, ServerId: serverID, Username: "root"}); err == nil {
+			if upstreamID, err = u.Post(&crud.UpstreamRecord{Name: upstream.Name, ServerId: serverID, Username: upstream.Name}); err == nil {
 				err = u.Commit()
 			} else {
 				err = u.Rollback()
