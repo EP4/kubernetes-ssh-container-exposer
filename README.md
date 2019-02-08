@@ -36,7 +36,7 @@ Kubernetes SSH Container Exposer registers the SSH container information in the 
 To install the chart with the release name `ksce`:
 
 ```bash
-$ git clone git@github.com:lightnet328/kubernetes-ssh-container-exposer.git
+$ git clone git@github.com:ep4/kubernetes-ssh-container-exposer.git
 $ cd kubernetes-ssh-container-exposer
 $ helm dep build
 $ helm inspect values . > ksce.yaml
