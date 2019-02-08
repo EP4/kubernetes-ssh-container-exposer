@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/base64"
 	"log"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 	v1 "k8s.io/api/core/v1"
