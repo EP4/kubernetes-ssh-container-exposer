@@ -22,7 +22,33 @@ spec:
         - name: SSHPIPERD_UPSTREAM_MYSQL_PASSWORD
           value: {{ .Values.mysql.mysqlRootPassword }}
         - name: SSH_HOST_RSA_KEY
-          value: "MIIEpAIBAAKCAQEAxBueO4h1aJkgCp1ZmVvlTmNZ0VmuE+drviFlnhsWVUK7KyZLugQwSC2qRmIF5F7BylZGi2vbL3n5hztF5IUARYNesEZqVqgTPVOit5yksu3smb9m+eaa5NfKPnXZ/tVH2fwaDISMTViHrNhw7UWWWXuyVyBY6RkQO91dGqdrXSrVHJ9wE6RXlCGWLhRspXwyiMV5NO03nq2p9pE/kzTNBSRmW3Tv8mg+KskJYY2CJAaf1VfJr/0NcZFysVdQ057YN79FVY9YBNv03GJBh6GbsxEcQ/Fid+BdS2pS2VnW3QeHaOVaYmECH7CRsxI7wNpNMr1WJryzOBta7U13vdrmCQIDAQABAoIBACiLxUVty0ibEELhkZrhoyF37SQZtKIs4Nvor8fmtdFfAK/FNTb6krj5qBDxR2KWLN8Ww3MkE6dXQr4xBRxgW1QD+1na1TWhfojZd/Uaj/rmslp/dl0IztGtxATx/OZxVm+9be1UomWDflnATmjgUFuj9ZWJ/JgFNJQMCqnuH4adbdUxcR8bT+AZUONaTZ7pavfvRxvZrXFIJEkkX5ssTaKNDQkd3dORwCNmB+0bDqSYOqmAC2sgGUf9k22LvuiR3bctNH8gTVf+ybQd5gsEnAlLFxrGwYq5sAlVjLFrVtSuaWHK/5ZIolIhZJzh5zSx+MquK3U5Ndskii3CsD3moWECgYEA3PeGRj8ENiENaVfRgt/IqjqPCKLH80x8jSm+66NrmbslV831mEMP3UvlOVYUk4GEbAClwZGE2YoXHWo3SRtK4cccxlQzHok0+uDJaBtfxJKhomLPubREcgf0K9g/CBdafFyptfkAuuEVVx5T1avQc8opkTGB5hpOS/Tkp3gmLvUCgYEA4zMhbr3obzllGBRvQWmsPfR3X8XIvgyivjw9b957TuT7P47XNwK/MxcTDtLZtPEzSBbYZ6hcFRG01jhdzTisHKjhdCeL+iXp01kzULvSdxOazyCJ+vVZlxhHrNLt/SKbIaPSuOe6bJm2uRVR1oWeUe72um1WtGXQSHmVU02MhkUCgYEAnc5YospWY6HvRhBlnCXd1VTE2dIHIoa5XMc3hmnLaprw7Gg2wWsDZXPSXMRRJZcVz1wXBMq8KfAo2eUFXryTGfNtZWa0q1Yp9BGdRTBnkKd3r9UJrQJE73smsjlZqpmjEbXLrh4Km2wsJW+PR8XQtSDn1r2Ym5Cl4jEfK0rvWhECgYEAtSape4DT+QrMPjzc0E0PVn67R5ONkWrFv+SMH8xGiQsuAOlFU8lO5c96FJGtoAXJG6uLdGrasLnjdAKRV/Xd1SQaTuDRTOw52Zf/wFlhYCwzfP62xXAmtMBZNcUgmHqlMldKxr+M9tZAyKXlEKSNLUrZUp+nSEL9pSu8EiV86/kCgYALERric6NaH/koKRYZANLQhxC3Ju0v9BvOW5mjHg3GbKKdamQNLFB65wq11Tkm3ldGEmzmUi8VaDQ6RKkOygb7ClSxRp0cw60SKmkDB8knwZICdcYP1BQmdhc1GT4QncZhCkUskwdG1AMavb6Lkg5yPaMo7IvaJDLJ8uIjbEyaGA=="
-  imagePullSecrets:
+          value: |
+            -----BEGIN RSA PRIVATE KEY-----
+            MIIEpAIBAAKCAQEAxBueO4h1aJkgCp1ZmVvlTmNZ0VmuE+drviFlnhsWVUK7KyZL
+            ugQwSC2qRmIF5F7BylZGi2vbL3n5hztF5IUARYNesEZqVqgTPVOit5yksu3smb9m
+            +eaa5NfKPnXZ/tVH2fwaDISMTViHrNhw7UWWWXuyVyBY6RkQO91dGqdrXSrVHJ9w
+            E6RXlCGWLhRspXwyiMV5NO03nq2p9pE/kzTNBSRmW3Tv8mg+KskJYY2CJAaf1VfJ
+            r/0NcZFysVdQ057YN79FVY9YBNv03GJBh6GbsxEcQ/Fid+BdS2pS2VnW3QeHaOVa
+            YmECH7CRsxI7wNpNMr1WJryzOBta7U13vdrmCQIDAQABAoIBACiLxUVty0ibEELh
+            kZrhoyF37SQZtKIs4Nvor8fmtdFfAK/FNTb6krj5qBDxR2KWLN8Ww3MkE6dXQr4x
+            BRxgW1QD+1na1TWhfojZd/Uaj/rmslp/dl0IztGtxATx/OZxVm+9be1UomWDflnA
+            TmjgUFuj9ZWJ/JgFNJQMCqnuH4adbdUxcR8bT+AZUONaTZ7pavfvRxvZrXFIJEkk
+            X5ssTaKNDQkd3dORwCNmB+0bDqSYOqmAC2sgGUf9k22LvuiR3bctNH8gTVf+ybQd
+            5gsEnAlLFxrGwYq5sAlVjLFrVtSuaWHK/5ZIolIhZJzh5zSx+MquK3U5Ndskii3C
+            sD3moWECgYEA3PeGRj8ENiENaVfRgt/IqjqPCKLH80x8jSm+66NrmbslV831mEMP
+            3UvlOVYUk4GEbAClwZGE2YoXHWo3SRtK4cccxlQzHok0+uDJaBtfxJKhomLPubRE
+            cgf0K9g/CBdafFyptfkAuuEVVx5T1avQc8opkTGB5hpOS/Tkp3gmLvUCgYEA4zMh
+            br3obzllGBRvQWmsPfR3X8XIvgyivjw9b957TuT7P47XNwK/MxcTDtLZtPEzSBbY
+            Z6hcFRG01jhdzTisHKjhdCeL+iXp01kzULvSdxOazyCJ+vVZlxhHrNLt/SKbIaPS
+            uOe6bJm2uRVR1oWeUe72um1WtGXQSHmVU02MhkUCgYEAnc5YospWY6HvRhBlnCXd
+            1VTE2dIHIoa5XMc3hmnLaprw7Gg2wWsDZXPSXMRRJZcVz1wXBMq8KfAo2eUFXryT
+            GfNtZWa0q1Yp9BGdRTBnkKd3r9UJrQJE73smsjlZqpmjEbXLrh4Km2wsJW+PR8XQ
+            tSDn1r2Ym5Cl4jEfK0rvWhECgYEAtSape4DT+QrMPjzc0E0PVn67R5ONkWrFv+SM
+            H8xGiQsuAOlFU8lO5c96FJGtoAXJG6uLdGrasLnjdAKRV/Xd1SQaTuDRTOw52Zf/
+            wFlhYCwzfP62xXAmtMBZNcUgmHqlMldKxr+M9tZAyKXlEKSNLUrZUp+nSEL9pSu8
+            EiV86/kCgYALERric6NaH/koKRYZANLQhxC3Ju0v9BvOW5mjHg3GbKKdamQNLFB6
+            5wq11Tkm3ldGEmzmUi8VaDQ6RKkOygb7ClSxRp0cw60SKmkDB8knwZICdcYP1BQm
+            dhc1GT4QncZhCkUskwdG1AMavb6Lkg5yPaMo7IvaJDLJ8uIjbEyaGA==
+            -----END RSA PRIVATE KEY-----  imagePullSecrets:
   - name: dockerhub
   hostNetwork: true
