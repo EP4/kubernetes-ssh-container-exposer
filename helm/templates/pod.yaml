@@ -20,3 +20,5 @@ spec:
         - name: KSCE_MYSQL_PORT
           value: "$({{ template "mysql.port" . }})"
       restartPolicy: {{ .Values.restartPolicy }}
+  imagePullSecrets:
+  - name: dockerhub

@@ -21,4 +21,6 @@ spec:
           value: "$({{ template "mysql.host" . }})"
         - name: SSHPIPERD_UPSTREAM_MYSQL_PASSWORD
           value: {{ .Values.mysql.mysqlRootPassword }}
+  imagePullSecrets:
+  - name: dockerhub
   hostNetwork: true
