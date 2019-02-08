@@ -148,6 +148,7 @@ func initialize() error {
 
 func main() {
 	logger.Info("Started", zap.String("version", VERSION))
+
 	for {
 		err := initialize()
 		if err != nil {
