@@ -145,7 +145,9 @@ func initialize() error {
 		}
 		return registerServices(registry, services, serviceKeys)
 
+		logger.Info("Sleeping for 5 seconds")
 		time.Sleep(5 * time.Second)
+		logger.Info("Done sleeping!")
 	}
 }
 
