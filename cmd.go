@@ -153,6 +153,7 @@ func initialize() error {
 
 func main() {
 	logger.Info("Started", zap.String("version", VERSION))
+	logger.Info("Test")
 
 	err := initialize()
 	if err != nil {
