@@ -130,17 +130,22 @@ func initialize() error {
 	if err != nil {
 		return err
 	}
-	serviceList, err := getServiceList(client)
-	if err != nil {
-		return err
-	}
 
-	services = groupByNamespace(filterSSHServices(serviceList.Items))
-	serviceKeys, err := getServiceKeys(client, services)
-	if err != nil {
-		return err
+	for {
+		serviceList, err := getServiceList(client)
+		if err != nil {
+			return err
+		}
+
+		services = groupByNamespace(filterSSHServices(serviceList.Items))
+		serviceKeys, err := getServiceKeys(client, services)
+		if err != nil {
+			return err
+		}
+		return registerServices(registry, services, serviceKeys)
+
+		time.Sleep(5 * time.Second)
 	}
-	return registerServices(registry, services, serviceKeys)
 }
 
 func main() {
