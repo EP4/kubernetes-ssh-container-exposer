@@ -132,31 +132,29 @@ func initialize() error {
 		return err
 	}
 
-	for {
-		serviceList, err := getServiceList(client)
-		if err != nil {
-			return err
-		}
-
-		services = groupByNamespace(filterSSHServices(serviceList.Items))
-		serviceKeys, err := getServiceKeys(client, services)
-		if err != nil {
-			return err
-		}
-		return registerServices(registry, services, serviceKeys)
-
-		logger.Info("Sleeping for 5 seconds")
-		time.Sleep(5 * time.Second)
-		logger.Info("Done sleeping!")
+	serviceList, err := getServiceList(client)
+	if err != nil {
+		return err
 	}
+
+	services = groupByNamespace(filterSSHServices(serviceList.Items))
+	serviceKeys, err := getServiceKeys(client, services)
+	if err != nil {
+		return err
+	}
+	return registerServices(registry, services, serviceKeys)
+
 }
 
 func main() {
 	logger.Info("Started", zap.String("version", VERSION))
 	logger.Info("Test")
 
-	err := initialize()
-	if err != nil {
-		log.Fatal(err)
+	for {
+		err := initialize()
+		if err != nil {
+			log.Fatal(err)
+		}
+		time.Sleep(10 * time.Second)
 	}
 }
