@@ -109,7 +109,6 @@ func registerServices(registry *Registry, services GroupedServices, serviceKeys 
 	for namespace, services := range services {
 		for i, service := range services {
 			keys := serviceKeys[namespace][service.Name]
-			var DownstreamPublicKey []string
 			_ = i
 			if _, err := registry.RegisterUpstream(&Upstream{
 				Name:                service.Name,

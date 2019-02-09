@@ -28,7 +28,7 @@ type Upstream struct {
 	Username            string
 	Address             string
 	SSHPiperPrivateKey  string
-	DownstreamPublicKey string
+	DownstreamPublicKey []string
 }
 
 func NewRegistry() *Registry {
