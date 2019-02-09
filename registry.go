@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/kelseyhightower/envconfig"
@@ -164,7 +165,7 @@ func (r *Registry) RegisterUpstream(upstream *Upstream) (*Upstream, error) {
 		return nil, err
 	}
 
-	Temp := upstream.DownstreamPublicKey.Split(DownstreamPublicKeys, "\n")
+	DownstreamPublicKeys := strings.Split(upstream.DownstreamPublicKey, "\n")
 	for _, DownstreamPublicKey := range DownstreamPublicKeys {
 
 		pub := crud.NewPublicKeys(r.database)
