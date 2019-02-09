@@ -24,7 +24,7 @@ type Services []v1.Service
 type GroupedServices map[string]Services
 type Keys struct {
 	SSHPiperPrivateKey  string
-	DownstreamPublicKey string
+	DownstreamPublicKey []string
 }
 type ServiceKeys map[string]map[string]Keys
 
