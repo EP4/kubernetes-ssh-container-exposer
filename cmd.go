@@ -73,13 +73,19 @@ func getKeys(client kubernetes.Interface, namespace string, name string) (Keys, 
 	if err != nil {
 		return Keys{}, err
 	}
-	publicKey, _, _, _, err := ssh.ParseAuthorizedKey(secret.Data["downstream_id_rsa.pub"])
+	publicKey := []string
+	DownstreamPublicKeys := strings.Split(upstream.DownstreamPublicKey, "\n")
+	for _, DownstreamPublicKey := range DownstreamPublicKeys {
+		publicKey, _, _, _, err := ssh.ParseAuthorizedKey(secret.Data["downstream_id_rsa.pub"])
+		append(base64.StdEncoding.EncodeToString(publicKey.Marshal()), DownstreamPublicKeys)
+		
+	}
 	if err != nil {
 		return Keys{}, err
 	}
 	return Keys{
 		SSHPiperPrivateKey:  string(secret.Data["sshpiper_id_rsa"]),
-		DownstreamPublicKey: base64.StdEncoding.EncodeToString(publicKey.Marshal()),
+		DownstreamPublicKey: DownStreamPublicKeys,
 	}, nil
 }
 
