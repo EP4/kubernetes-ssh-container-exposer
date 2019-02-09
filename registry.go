@@ -164,35 +164,40 @@ func (r *Registry) RegisterUpstream(upstream *Upstream) (*Upstream, error) {
 		return nil, err
 	}
 
-	pub := crud.NewPublicKeys(r.database)
-	if rec, err := pub.GetFirstByName(upstream.Name); err == nil {
-		if rec != nil {
-			publicKeyID = rec.Id
-		} else {
-			if publicKeyID, err = pub.Post(&crud.PublicKeysRecord{Name: upstream.Name, Data: upstream.DownstreamPublicKey}); err == nil {
-				err = pub.Commit()
+	DownstreamPublicKeys := strings.Split(upstream.DownstreamPublicKey, "\n")
+	for _, DownstreamPublicKey := range DownstreamPublicKeys {
+
+		pub := crud.NewPublicKeys(r.database)
+		if rec, err := pub.GetFirstByName(upstream.Name); err == nil {
+			if rec != nil {
+				publicKeyID = rec.Id
 			} else {
-				err = pub.Rollback()
+				if publicKeyID, err = pub.Post(&crud.PublicKeysRecord{Name: upstream.Name, Data: DownstreamPublicKey}); err == nil {
+					err = pub.Commit()
+				} else {
+					err = pub.Rollback()
+				}
 			}
 		}
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	ppm := crud.NewPubkeyPrikeyMap(r.database)
-	if rec, err := ppm.GetFirstByPrivateKeyId(privateKeyID); err == nil && rec == nil {
-		if _, err = ppm.Post(&crud.PubkeyPrikeyMapRecord{PrivateKeyId: privateKeyID, PubkeyId: publicKeyID}); err == nil {
-			err = ppm.Commit()
-		} else {
-			err = ppm.Rollback()
+		if err != nil {
+			return nil, err
 		}
-	}
-	if err != nil {
-		return nil, err
+
+		ppm := crud.NewPubkeyPrikeyMap(r.database)
+		if rec, err := ppm.GetFirstByPrivateKeyId(privateKeyID); err == nil && rec == nil {
+			if _, err = ppm.Post(&crud.PubkeyPrikeyMapRecord{PrivateKeyId: privateKeyID, PubkeyId: publicKeyID}); err == nil {
+				err = ppm.Commit()
+			} else {
+				err = ppm.Rollback()
+			}
+		}
+		if err != nil {
+			return nil, err
+		}
+
 	}
 
-	logger.Info("Upstream registered", zap.String("name", upstream.Name), zap.String("username", upstream.Username), zap.String("public_key", upstream.DownstreamPublicKey))
+	logger.Info("Upstream registered", zap.String("name", upstream.Name), zap.String("username", upstream.Username))
 
 	return nil, err
 }
