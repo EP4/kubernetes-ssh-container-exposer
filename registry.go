@@ -166,8 +166,8 @@ func (r *Registry) RegisterUpstream(upstream *Upstream) (*Upstream, error) {
 	}
 
 	DownstreamPublicKeys := strings.Split(upstream.DownstreamPublicKey, "\n")
+	logger.Info(fmt.Println(strings.Split(upstream.DownstreamPublicKey, "\n")))
 	for i := range DownstreamPublicKeys {
-		logger.Info(fmt.Println(string(DownstreamPublicKeys[i])))
 		pub := crud.NewPublicKeys(r.database)
 		if rec, err := pub.GetFirstByName(upstream.Name); err == nil {
 			if rec != nil {
