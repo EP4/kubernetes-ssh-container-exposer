@@ -75,7 +75,7 @@ func getKeys(client kubernetes.Interface, namespace string, name string) (Keys, 
 		return Keys{}, err
 	}
 	var DownstreamPublicKeys []string
-	SecretDownstreamPublicKeys := strings.Split(base64.StdEncoding.EncodeToString(secret.Data["downstream_id_rsa.pub"]), "\n")
+	SecretDownstreamPublicKeys := strings.Split(secret.Data["downstream_id_rsa.pub"], "\n")
 	for _, DownstreamPublicKey := range SecretDownstreamPublicKeys {
 		// publicKey, _, _, _, err := ssh.ParseAuthorizedKey(DownstreamPublicKey)
 		DownstreamPublicKeys = append(DownstreamPublicKeys, DownstreamPublicKey)
