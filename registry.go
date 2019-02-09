@@ -164,7 +164,7 @@ func (r *Registry) RegisterUpstream(upstream *Upstream) (*Upstream, error) {
 		return nil, err
 	}
 
-	DownstreamPublicKeys := strings.Split(upstream.DownstreamPublicKey, "\n")
+	Temp := upstream.DownstreamPublicKey.Split(DownstreamPublicKeys, "\n")
 	for _, DownstreamPublicKey := range DownstreamPublicKeys {
 
 		pub := crud.NewPublicKeys(r.database)
