@@ -172,14 +172,14 @@ func (r *Registry) RegisterUpstream(upstream *Upstream) (*Upstream, error) {
 		// 		publicKeyID = rec.Id
 		// 		logger.Info("Key Fetched")
 		// 	} else {
-				if publicKeyID, err = pub.Post(&crud.PublicKeysRecord{Name: upstream.Name, Data: upstream.DownstreamPublicKey[i]}); err == nil {
-					err = pub.Commit()
-					logger.Info("Key Added")
-				} else {
-					err = pub.Rollback()
-				}
-			// }
+		if publicKeyID, err = pub.Post(&crud.PublicKeysRecord{Name: upstream.Name, Data: upstream.DownstreamPublicKey[i]}); err == nil {
+			err = pub.Commit()
+			logger.Info("Key Added")
+		} else {
+			err = pub.Rollback()
 		}
+		// }
+		// }
 		if err != nil {
 			return nil, err
 		}
