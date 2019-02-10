@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"log"
-	"strings"
 	"time"
 
 	"golang.org/x/crypto/ssh"
