@@ -167,18 +167,18 @@ func (r *Registry) RegisterUpstream(upstream *Upstream) (*Upstream, error) {
 	for i := range upstream.DownstreamPublicKey {
 		logger.Info("New DownstreamPublicKey")
 		pub := crud.NewPublicKeys(r.database)
-		if rec, err := pub.GetFirstByName(upstream.Name); err == nil {
-			if rec != nil {
-				publicKeyID = rec.Id
-				logger.Info("Key Fetched")
-			} else {
+		// if rec, err := pub.GetFirstByName(upstream.Name); err == nil {
+		// 	if rec != nil {
+		// 		publicKeyID = rec.Id
+		// 		logger.Info("Key Fetched")
+		// 	} else {
 				if publicKeyID, err = pub.Post(&crud.PublicKeysRecord{Name: upstream.Name, Data: upstream.DownstreamPublicKey[i]}); err == nil {
 					err = pub.Commit()
 					logger.Info("Key Added")
 				} else {
 					err = pub.Rollback()
 				}
-			}
+			// }
 		}
 		if err != nil {
 			return nil, err
