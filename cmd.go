@@ -81,8 +81,8 @@ func getKeys(client kubernetes.Interface, namespace string, name string) (Keys, 
 		ByteDownstreamPublicKey, _, _, _, err := ssh.ParseAuthorizedKey(DownstreamPublicKey)
 		if err != nil {
 			// return Keys{}, err
+			DownstreamPublicKeys = append(DownstreamPublicKeys, base64.StdEncoding.EncodeToString(ByteDownstreamPublicKey.Marshal()))
 		}
-		DownstreamPublicKeys = append(DownstreamPublicKeys, base64.StdEncoding.EncodeToString(ByteDownstreamPublicKey.Marshal()))
 
 	}
 	if err != nil {
