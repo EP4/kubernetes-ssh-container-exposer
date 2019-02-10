@@ -1,11 +1,9 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/base64"
 	"log"
-	"strings"
 	"time"
 
 	"golang.org/x/crypto/ssh"
@@ -77,9 +75,9 @@ func getKeys(client kubernetes.Interface, namespace string, name string) (Keys, 
 		return Keys{}, err
 	}
 	var DownstreamPublicKeys []string
-	SecretDownstreamPublicKeys := bufio.NewScanner(&bytes.NewBuffer(secret.Data["downstream_id_rsa.pub"]))
-	for SecretDownstreamPublicKeys.Scan() {
-		DownstreamPublicKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(scanner.Text()))
+	
+	for DownstreamPublicKey in bytes.NewBuffer(secret.Data["downstream_id_rsa.pub"].decode('utf-8').split('\n'):
+		DownstreamPublicKey, _, _, _, err := ssh.ParseAuthorizedKey(DownstreamPublicKey)
 		if err != nil {
 			return Keys{}, err
 		}
