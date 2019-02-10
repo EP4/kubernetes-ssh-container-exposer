@@ -185,17 +185,17 @@ func (r *Registry) RegisterUpstream(upstream *Upstream) (*Upstream, error) {
 		}
 
 		ppm := crud.NewPubkeyPrikeyMap(r.database)
-		if rec, err := ppm.GetFirstByPrivateKeyId(privateKeyID); err == nil && rec == nil {
-			if _, err = ppm.Post(&crud.PubkeyPrikeyMapRecord{PrivateKeyId: privateKeyID, PubkeyId: publicKeyID}); err == nil {
-				err = ppm.Commit()
-				logger.Info("Key Map Added")
-			} else {
-				err = ppm.Rollback()
-			}
+		// if rec, err := ppm.GetFirstByPrivateKeyId(privateKeyID); err == nil && rec == nil {
+		if _, err = ppm.Post(&crud.PubkeyPrikeyMapRecord{PrivateKeyId: privateKeyID, PubkeyId: publicKeyID}); err == nil {
+			err = ppm.Commit()
+			logger.Info("Key Map Added")
+		} else {
+			err = ppm.Rollback()
 		}
-		if err != nil {
-			return nil, err
-		}
+		// }
+		// if err != nil {
+		// 	return nil, err
+		// }
 		logger.Info("#########")
 	}
 
