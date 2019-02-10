@@ -168,31 +168,31 @@ func (r *Registry) RegisterUpstream(upstream *Upstream) (*Upstream, error) {
 		logger.Info("New DownstreamPublicKey")
 		pub := crud.NewPublicKeys(r.database)
 		// if rec, err := pub.GetFirstByName(upstream.Name); err == nil {
-			// if rec != nil {
-			//	publicKeyID = rec.Id
-			//	logger.Info("Key Fetched")
-			// } else {
-				if publicKeyID, err = pub.Post(&crud.PublicKeysRecord{Name: upstream.Name, Data: upstream.DownstreamPublicKey[i]}); err == nil {
-					err = pub.Commit()
-					logger.Info("Key Added")
-					logger.Info(upstream.DownstreamPublicKey[i])
-				} else {
-					err = pub.Rollback()
-				}
-			// }
+		// if rec != nil {
+		//	publicKeyID = rec.Id
+		//	logger.Info("Key Fetched")
+		// } else {
+		if publicKeyID, err = pub.Post(&crud.PublicKeysRecord{Name: upstream.Name, Data: upstream.DownstreamPublicKey[i]}); err == nil {
+			err = pub.Commit()
+			logger.Info("Key Added")
+			logger.Info(upstream.DownstreamPublicKey[i])
+		} else {
+			err = pub.Rollback()
 		}
+		// }
+		// }
 		if err != nil {
 			return nil, err
 		}
 
 		ppm := crud.NewPubkeyPrikeyMap(r.database)
 		// if rec, err := ppm.GetFirstByPrivateKeyId(privateKeyID); err == nil && rec == nil {
-			if _, err = ppm.Post(&crud.PubkeyPrikeyMapRecord{PrivateKeyId: privateKeyID, PubkeyId: publicKeyID}); err == nil {
-				err = ppm.Commit()
-				logger.Info("Key Map Added")
-			} else {
-				err = ppm.Rollback()
-			}
+		if _, err = ppm.Post(&crud.PubkeyPrikeyMapRecord{PrivateKeyId: privateKeyID, PubkeyId: publicKeyID}); err == nil {
+			err = ppm.Commit()
+			logger.Info("Key Map Added")
+		} else {
+			err = ppm.Rollback()
+		}
 		// }
 		// if err != nil {
 		// 	return nil, err
