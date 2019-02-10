@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	// "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh"
 	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -77,8 +77,8 @@ func getKeys(client kubernetes.Interface, namespace string, name string) (Keys, 
 	var DownstreamPublicKeys []string
 	SecretDownstreamPublicKeys := strings.Split(bytes.NewBuffer(secret.Data["downstream_id_rsa.pub"]).String(), "\n")
 	for _, DownstreamPublicKey := range SecretDownstreamPublicKeys {
-		// publicKey, _, _, _, err := ssh.ParseAuthorizedKey(DownstreamPublicKey)
-		DownstreamPublicKeys = append(DownstreamPublicKeys, DownstreamPublicKey)
+		DownstreamPublicKey, _, _, _, err := ssh.ParseAuthorizedKey(DownstreamPublicKey)
+		DownstreamPublicKeys = append(DownstreamPublicKeys, base64.StdEncoding.EncodeToString(DownstreamPublicKey.Marshal())
 
 	}
 	if err != nil {
