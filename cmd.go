@@ -1,8 +1,8 @@
 package main
 
 import (
-	"base64"
 	"bytes"
+	"encoding/base64"
 	"log"
 	"strings"
 	"time"
