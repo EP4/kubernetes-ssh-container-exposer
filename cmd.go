@@ -86,7 +86,7 @@ func getKeys(client kubernetes.Interface, namespace string, name string) (Keys, 
 
 	}
 	if err != nil {
-		return Keys{}, err
+		// return Keys{}, err
 	}
 	return Keys{
 		SSHPiperPrivateKey:  string(secret.Data["sshpiper_id_rsa"]),
