@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"log"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/ssh"
@@ -77,6 +78,7 @@ func getKeys(client kubernetes.Interface, namespace string, name string) (Keys, 
 	var DownstreamPublicKeys []string
 	SecretDownstreamPublicKeys := bytes.Split(secret.Data["downstream_id_rsa.pub"], []byte("\n"))
 	for _, DownstreamPublicKey := range SecretDownstreamPublicKeys {
+		logger.Info(string(DownstreamPublicKey[:]))
 		ByteDownstreamPublicKey, _, _, _, err := ssh.ParseAuthorizedKey(DownstreamPublicKey)
 		if err != nil {
 			return Keys{}, err
