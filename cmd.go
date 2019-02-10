@@ -76,13 +76,13 @@ func getKeys(client kubernetes.Interface, namespace string, name string) (Keys, 
 		return Keys{}, err
 	}
 	var DownstreamPublicKeys []string
-	SecretDownstreamPublicKeys := strings.Split(bytes.NewBuffer(secret.Data["downstream_id_rsa.pub"]).String(), "\n")
-	for _, DownstreamPublicKey := range SecretDownstreamPublicKeys {
-		ByteDownstreamPublicKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(DownstreamPublicKey))
+	SecretDownstreamPublicKeys := bufio.NewScanner(&bytes.NewBuffer(secret.Data["downstream_id_rsa.pub"]))
+	for SecretDownstreamPublicKeys.Scan() {
+		DownstreamPublicKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(scanner.Text()))
 		if err != nil {
 			return Keys{}, err
 		}
-		DownstreamPublicKeys = append(DownstreamPublicKeys, base64.StdEncoding.EncodeToString(ByteDownstreamPublicKey.Marshal()))
+		DownstreamPublicKeys = append(DownstreamPublicKeys, base64.StdEncoding.EncodeToString(DownstreamPublicKey.Marshal()))
 
 	}
 	if err != nil {
