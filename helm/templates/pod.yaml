@@ -1,24 +1,31 @@
-apiVersion: v1
-kind: Pod
+apiVersion: extensions/v1beta1
+kind: Deployment
 metadata:
-  name: {{ template "kubernetes-ssh-container-exposer.fullname" . }}
-  labels:
-    app: {{ template "kubernetes-ssh-container-exposer.name" . }}
-    chart: {{ template "kubernetes-ssh-container-exposer.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+  name: {{ template "kubernetes-ssh-container-exposer.fullname" . }}-deployment
 spec:
-  containers:
-    - name: {{ template "kubernetes-ssh-container-exposer.name" . }}
-      image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-      imagePullPolicy: {{ .Values.image.pullPolicy }}
-      env:
-        - name: KSCE_MYSQL_HOST
-          value: "$({{ template "mysql.host" . }})"
-        - name: KSCE_MYSQL_PASSWORD
-          value: {{ .Values.mysql.mysqlRootPassword }}
-        - name: KSCE_MYSQL_PORT
-          value: "$({{ template "mysql.port" . }})"
-      restartPolicy: {{ .Values.restartPolicy }}
-  imagePullSecrets:
-  - name: dockerhub
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      name: {{ template "kubernetes-ssh-container-exposer.fullname" . }}
+      labels:
+        app: {{ template "kubernetes-ssh-container-exposer.name" . }}
+        chart: {{ template "kubernetes-ssh-container-exposer.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+    spec:
+      containers:
+        - name: {{ template "kubernetes-ssh-container-exposer.name" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: KSCE_MYSQL_HOST
+              value: "$({{ template "mysql.host" . }})"
+            - name: KSCE_MYSQL_PASSWORD
+              value: {{ .Values.mysql.mysqlRootPassword }}
+            - name: KSCE_MYSQL_PORT
+              value: "$({{ template "mysql.port" . }})"
+          restartPolicy: {{ .Values.restartPolicy }}
+      imagePullSecrets:
+      - name: dockerhub
