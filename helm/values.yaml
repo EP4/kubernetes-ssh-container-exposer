@@ -115,8 +115,7 @@ mysql:
         `type` varchar(45) NOT NULL,
         `gmt_create` datetime DEFAULT CURRENT_TIMESTAMP,
         `gmt_modified` datetime DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (`id`),
-        UNIQUE KEY `uniq_data` (`data`)
+        PRIMARY KEY (`id`)
       ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
       /*!40101 SET character_set_client = @saved_cs_client */;
 
