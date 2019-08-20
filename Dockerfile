@@ -1,9 +1,18 @@
-FROM golang:1.10.3
+FROM golang:1.11.0
+
+ENV GOPATH=/go
 
 WORKDIR /go/src/github.com/ep4/kubernetes-ssh-container-exposer
 
-ADD . .
+RUN mkdir -p "${GOPATH}/src/github.com/golang" \
+ && cd "${GOPATH}/src/github.com/golang" \
+ && mkdir -p "${GOPATH}/bin" \
+ && curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 
-RUN go install github.com/ep4/kubernetes-ssh-container-exposer
+ADD . "${WORKDIR}"
 
-CMD "kubernetes-ssh-container-exposer"
+RUN dep ensure
+
+RUN go build -o kubernetes-ssh-container-exposer cmd.go registry.go
+
+CMD "./kubernetes-ssh-container-exposer"
