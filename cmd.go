@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"encoding/base64"
 	"log"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 	v1 "k8s.io/api/core/v1"
@@ -22,7 +24,7 @@ type Services []v1.Service
 type GroupedServices map[string]Services
 type Keys struct {
 	SSHPiperPrivateKey  string
-	DownstreamPublicKey string
+	DownstreamPublicKey []string
 }
 type ServiceKeys map[string]map[string]Keys
 
@@ -72,13 +74,24 @@ func getKeys(client kubernetes.Interface, namespace string, name string) (Keys, 
 	if err != nil {
 		return Keys{}, err
 	}
-	publicKey, _, _, _, err := ssh.ParseAuthorizedKey(secret.Data["downstream_id_rsa.pub"])
+	var DownstreamPublicKeys []string
+	SecretDownstreamPublicKeys := bytes.Split(secret.Data["downstream_id_rsa.pub"], []byte("\n"))
+	for _, DownstreamPublicKey := range SecretDownstreamPublicKeys {
+		// logger.Info(string(DownstreamPublicKey[:]))
+		ByteDownstreamPublicKey, _, _, _, err := ssh.ParseAuthorizedKey(DownstreamPublicKey)
+		if err != nil {
+			// return Keys{}, err
+		} else {
+			DownstreamPublicKeys = append(DownstreamPublicKeys, base64.StdEncoding.EncodeToString(ByteDownstreamPublicKey.Marshal()))
+		}
+
+	}
 	if err != nil {
-		return Keys{}, err
+		// return Keys{}, err
 	}
 	return Keys{
 		SSHPiperPrivateKey:  string(secret.Data["sshpiper_id_rsa"]),
-		DownstreamPublicKey: base64.StdEncoding.EncodeToString(publicKey.Marshal()),
+		DownstreamPublicKey: DownstreamPublicKeys,
 	}, nil
 }
 
@@ -99,23 +112,18 @@ func getServiceKeys(client kubernetes.Interface, services GroupedServices) (Serv
 
 func registerServices(registry *Registry, services GroupedServices, serviceKeys ServiceKeys) error {
 	for namespace, services := range services {
-		switch len(services) {
-		case 1:
-			service := services[0]
+		for i, service := range services {
 			keys := serviceKeys[namespace][service.Name]
+			_ = i
 			if _, err := registry.RegisterUpstream(&Upstream{
 				Name:                service.Name,
-				Username:            service.Namespace,
+				Username:            service.Name,
 				Address:             service.Spec.ClusterIP,
 				SSHPiperPrivateKey:  keys.SSHPiperPrivateKey,
 				DownstreamPublicKey: keys.DownstreamPublicKey,
 			}); err != nil {
 				return err
 			}
-		case 2:
-			logger.Info("Registration process is skipped. There are two or more services using port for service in namespace.\n", zap.String("namespace", namespace), zap.Int32("port", SSHServicePort))
-		default:
-			continue
 		}
 	}
 	return nil
@@ -135,6 +143,7 @@ func initialize() error {
 	if err != nil {
 		return err
 	}
+
 	serviceList, err := getServiceList(client)
 	if err != nil {
 		return err
@@ -146,13 +155,17 @@ func initialize() error {
 		return err
 	}
 	return registerServices(registry, services, serviceKeys)
+
 }
 
 func main() {
 	logger.Info("Started", zap.String("version", VERSION))
 
-	err := initialize()
-	if err != nil {
-		log.Fatal(err)
+	for {
+		err := initialize()
+		if err != nil {
+			log.Fatal(err)
+		}
+		time.Sleep(10 * time.Second)
 	}
 }
