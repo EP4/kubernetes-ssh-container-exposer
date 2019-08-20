@@ -1,0 +1,32 @@
+# Gopkg.toml example
+[[constraint]]
+  name = "github.com/go-sql-driver/mysql"
+  version = "1.4.1"
+
+[[constraint]]
+  name = "github.com/kelseyhightower/envconfig"
+  version = "1.4.0"
+
+[[constraint]]
+  name = "github.com/tg123/sshpiper"
+  version = "0.3.1"
+
+[[constraint]]
+  name = "go.uber.org/zap"
+  version = "1.10.0"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/crypto"
+
+[[constraint]]
+  branch = "master"
+  name = "k8s.io/api"
+
+[[constraint]]
+  name = "k8s.io/client-go"
+  version = "12.0.0"
+
+[prune]
+  go-tests = true
+  unused-packages = true
