@@ -68,6 +68,93 @@ func TestSSHSecretHandlerCreate(t *testing.T) {
 	}
 }
 
+func TestSSHSecretHandlerUpdate(t *testing.T) {
+	c := fake.NewSimpleClientset()
+	l, _ := zap.NewDevelopment()
+	handler := NewSecretHandler(c, mockRegistry{}, l)
+
+	uh := handler.NewUpdateHandler()
+
+	secret, s, b64 := getValidSSHSecret(t)
+	secret, err := c.CoreV1().Secrets(testNamespace).Create(secret)
+	if err != nil {
+		t.Errorf("error when creating test secret")
+	}
+
+	service := getValidSSHService(t)
+	_, err = c.CoreV1().Services(testNamespace).Create(service)
+	if err != nil {
+		t.Errorf("error when creating test service")
+	}
+
+	// mimic the behaviour guaranteed by our controller when a create method is called
+	copy := secret.DeepCopy()
+	copy.ResourceVersion = "2"
+	copy.StringData = map[string]string{
+		"test": "update",
+	}
+	_, err = c.CoreV1().Secrets(testNamespace).Update(copy)
+	if err != nil {
+		t.Errorf("error when creating test secret")
+	}
+	uh.SetObjects(secret, copy)
+
+	err = uh.Handle()
+	if err != nil {
+		t.Errorf("unexpected error when handling create event - %v", err)
+	}
+
+	upstream := <-resultChan
+	result, ok := upstream.(*registry.Upstream)
+	if !ok {
+		t.Errorf("unexpected type assertion - got %v", result)
+	}
+
+	expect := &registry.Upstream{
+		Name:                validNames,
+		Username:            validNames,
+		Address:             staticClusterIP,
+		SSHPiperPrivateKey:  s,
+		DownstreamPublicKey: b64,
+	}
+
+	if !reflect.DeepEqual(result, expect) {
+		t.Errorf("unexpected result, expected \n %v \n but got \n%v", expect, result)
+	}
+}
+
+func TestSSHSecretHandlerDelete(t *testing.T) {
+	c := fake.NewSimpleClientset()
+	l, _ := zap.NewDevelopment()
+	handler := NewSecretHandler(c, mockRegistry{}, l)
+
+	secret, s, b64 := getValidSSHSecret(t)
+	dh := handler.NewDeleteHandler()
+	dh.SetObject(secret)
+
+	err := dh.Handle()
+	if err != nil {
+		t.Errorf("unexpected error when handling delete event - %v", err)
+	}
+
+	upstream := <-resultChan
+	result, ok := upstream.(*registry.Upstream)
+	if !ok {
+		t.Errorf("unexpected type assertion - got %v", result)
+	}
+
+	expect := &registry.Upstream{
+		Name:                validNames,
+		Username:            validNames,
+		SSHPiperPrivateKey:  s,
+		DownstreamPublicKey: b64,
+	}
+
+	if !reflect.DeepEqual(result, expect) {
+		t.Errorf("unexpected result, expected \n %v \n but got \n%v", expect, result)
+	}
+}
+
 // getValidSSHSecret expected to be parsed during happy path test
 func getValidSSHSecret(t *testing.T) (*v1.Secret, string, []string) {
 	t.Helper()
@@ -148,4 +235,9 @@ type mockRegistry struct{}
 func (mr mockRegistry) RegisterUpstream(upstream *registry.Upstream) (*registry.Upstream, error) {
 	go func() { resultChan <- upstream }()
 	return upstream, nil
+}
+
+func (mr mockRegistry) UnregisterUpstream(upstream *registry.Upstream) error {
+	go func() { resultChan <- upstream }()
+	return nil
 }

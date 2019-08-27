@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/EP4/kubernetes-ssh-container-exposer/internal/registry"
-	controller "github.com/EP4/kubernetes-ssh-container-exposer/pkg/kubernetes/secrets-controller"
+	controller "github.com/philipgough/kube-kontroller"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
 	v1 "k8s.io/api/core/v1"
