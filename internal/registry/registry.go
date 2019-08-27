@@ -12,6 +12,7 @@ import (
 
 type Registrable interface {
 	RegisterUpstream(upstream *Upstream) (*Upstream, error)
+	UnregisterUpstream(upstream *Upstream) error
 }
 
 type Registry struct {
@@ -210,4 +211,251 @@ func (r *Registry) RegisterUpstream(upstream *Upstream) (*Upstream, error) {
 	r.logger.Info("Upstream registered", zap.String("name", upstream.Name), zap.String("username", upstream.Username))
 
 	return nil, err
+}
+
+func (r *Registry) UnregisterUpstream(upstream *Upstream) error {
+	// note the get{x}Record functions are expected to return values which make it safe
+	// to assume not nil on the record after checking the err is not nil. This allows us to reduce
+	// the verbosity of the code here. These functions are also expected to set sentinel errors from sql
+	// for no rows found so that the caller can make informed decisions on how they will handle the failure.
+
+	s, serverRec, err := r.getServerRecord(upstream.Address)
+	if err != nil {
+		return err
+	}
+
+	u, upstreamRec, err := r.getUpstreamRecord(serverRec.Id)
+	if err != nil {
+		return err
+	}
+
+	um, upstreamUserMap, err := r.getUpstreamUserMapRecord(upstreamRec.Id)
+	if err != nil {
+		return err
+	}
+
+	// respect constraints and delete in reverse
+	err = r.deleteUpstreamUserMapRecord(um, upstreamUserMap)
+	if err != nil {
+		return err
+	}
+
+	err = r.deleteUpstreamRecord(u, upstreamRec)
+	if err != nil {
+		return err
+	}
+
+	err = r.deleteServerRecord(s, serverRec)
+	if err != nil {
+		return err
+	}
+
+	// cleaning up keys and mappings
+	privateKey, pkRec, err := r.getPrivateKeys(upstream.Name)
+	if err != nil {
+		return err
+	}
+
+	pubPrivKeyMap, ppkRec, err := r.getPublicPrivateKeyMap(pkRec.Id)
+	if err != nil {
+		return err
+	}
+
+	// get the list of public keys associated with the name
+	publicKeys, pubKeyRec, err := r.getPublicKeys(upstream.Name)
+	if err != nil {
+		return err
+	}
+
+	errs := r.deletePublicPrivateKeyMap(pubPrivKeyMap, ppkRec)
+	if len(errs) > 0 {
+		for _, e := range errs {
+			r.logger.Sugar().Errorf("error deleting entry from 'pubkey_prikey_map' - %v", e)
+		}
+		return fmt.Errorf("failed to delete some required entries")
+	}
+
+	errs = r.deletePublicKeyRecords(publicKeys, pubKeyRec)
+	if len(errs) > 0 {
+		for _, e := range errs {
+			r.logger.Sugar().Errorf("error deleting entry from 'public_keys' - %v", e)
+		}
+		return fmt.Errorf("failed to delete some required entries")
+	}
+
+	err = r.deletePrivateKeyRecord(privateKey, pkRec)
+	if err != nil {
+		return err
+	}
+
+	r.logger.Info("Upstream unregistered", zap.String("name", upstream.Name), zap.String("username", upstream.Username))
+	return nil
+}
+
+func (r *Registry) getServerRecord(address string) (*crud.Server, *crud.ServerRecord, error) {
+	s := crud.NewServer(r.database)
+	rec, err := s.GetFirstByAddress(address)
+	if err != nil {
+		return s, nil, err
+	}
+	if rec == nil {
+		err = sql.ErrNoRows
+		return s, nil, err
+	}
+	return s, rec, nil
+}
+
+func (r *Registry) getUpstreamRecord(serverID int64) (*crud.Upstream, *crud.UpstreamRecord, error) {
+	u := crud.NewUpstream(r.database)
+	rec, err := u.GetFirstByServerId(serverID)
+	if err != nil {
+		return u, nil, err
+	}
+	if rec == nil {
+		err = sql.ErrNoRows
+		return u, nil, err
+	}
+	return u, rec, nil
+}
+
+func (r *Registry) getUpstreamUserMapRecord(upstreamID int64) (*crud.UserUpstreamMap, *crud.UserUpstreamMapRecord, error) {
+	u := crud.NewUserUpstreamMap(r.database)
+	rec, err := u.GetFirstByUpstreamId(upstreamID)
+	if err != nil {
+		return u, nil, err
+	}
+	if rec == nil {
+		err = sql.ErrNoRows
+		return u, nil, err
+	}
+	return u, rec, nil
+}
+
+func (r *Registry) getPublicKeys(upstream string) (*crud.PublicKeys, []*crud.PublicKeysRecord, error) {
+	pk := crud.NewPublicKeys(r.database)
+	rec, err := pk.GetByName(upstream)
+	if err != nil {
+		return pk, nil, err
+	}
+	if rec == nil {
+		err = sql.ErrNoRows
+		return pk, nil, err
+	}
+	return pk, rec, nil
+}
+
+func (r *Registry) getPrivateKeys(upstream string) (*crud.PrivateKeys, *crud.PrivateKeysRecord, error) {
+	pk := crud.NewPrivateKeys(r.database)
+	rec, err := pk.GetFirstByName(upstream)
+	if err != nil {
+		return pk, nil, err
+	}
+	if rec == nil {
+		err = sql.ErrNoRows
+		return pk, nil, err
+	}
+	return pk, rec, nil
+}
+
+func (r *Registry) getPublicPrivateKeyMap(privateKeyID int64) (*crud.PubkeyPrikeyMap, []*crud.PubkeyPrikeyMapRecord, error) {
+	ppk := crud.NewPubkeyPrikeyMap(r.database)
+	rec, err := ppk.GetByPrivateKeyId(privateKeyID)
+	if err != nil {
+		return ppk, nil, err
+	}
+	if rec == nil {
+		err = sql.ErrNoRows
+		return ppk, nil, err
+	}
+	return ppk, rec, nil
+}
+
+func (r *Registry) deleteServerRecord(s *crud.Server, rec *crud.ServerRecord) error {
+	_, err := s.Delete(rec)
+	if err != nil {
+		return err
+	}
+	err = s.Commit()
+	if err != nil {
+		rbErr := s.Rollback()
+		r.logger.Sugar().Errorf("error during rollback %v", rbErr)
+	}
+	return err
+}
+
+func (r *Registry) deleteUpstreamRecord(u *crud.Upstream, rec *crud.UpstreamRecord) error {
+	_, err := u.Delete(rec)
+	if err != nil {
+		return err
+	}
+	err = u.Commit()
+	if err != nil {
+		rbErr := u.Rollback()
+		r.logger.Sugar().Errorf("error during rollback %v", rbErr)
+	}
+	return err
+}
+
+func (r *Registry) deleteUpstreamUserMapRecord(u *crud.UserUpstreamMap, rec *crud.UserUpstreamMapRecord) error {
+	_, err := u.Delete(rec)
+	if err != nil {
+		return err
+	}
+	err = u.Commit()
+	if err != nil {
+		rbErr := u.Rollback()
+		r.logger.Sugar().Errorf("error during rollback %v", rbErr)
+	}
+	return err
+}
+
+func (r *Registry) deletePrivateKeyRecord(u *crud.PrivateKeys, rec *crud.PrivateKeysRecord) error {
+	_, err := u.Delete(rec)
+	if err != nil {
+		return err
+	}
+	err = u.Commit()
+	if err != nil {
+		rbErr := u.Rollback()
+		r.logger.Sugar().Errorf("error during rollback %v", rbErr)
+	}
+	return err
+}
+
+func (r *Registry) deletePublicKeyRecords(u *crud.PublicKeys, rec []*crud.PublicKeysRecord) []error {
+	var errs []error
+	for _, record := range rec {
+		_, err := u.Delete(record)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		err = u.Commit()
+		if err != nil {
+			rbErr := u.Rollback()
+			r.logger.Sugar().Errorf("error during rollback %v", rbErr)
+			errs = append(errs, rbErr)
+			continue
+		}
+	}
+	return errs
+}
+
+func (r *Registry) deletePublicPrivateKeyMap(u *crud.PubkeyPrikeyMap, rec []*crud.PubkeyPrikeyMapRecord) []error {
+	var errs []error
+	for _, record := range rec {
+		_, err := u.Delete(record)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		err = u.Commit()
+		if err != nil {
+			rbErr := u.Rollback()
+			r.logger.Sugar().Errorf("error during rollback %v", rbErr)
+			errs = append(errs, rbErr)
+			continue
+		}
+	}
+	return errs
 }
