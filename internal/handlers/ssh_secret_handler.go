@@ -47,6 +47,9 @@ type (
 	}
 
 	DeleteResourceHandler struct {
+		client   kubernetes.Interface
+		registry registry.Registrable
+		logger   *zap.Logger
 		oldValue interface{}
 	}
 )
@@ -76,7 +79,11 @@ func (h SSHSecretHandler) NewUpdateHandler() controller.HandleUpdate {
 }
 
 func (h SSHSecretHandler) NewDeleteHandler() controller.HandleDelete {
-	return &DeleteResourceHandler{}
+	return &DeleteResourceHandler{
+		client:   h.client,
+		registry: h.registry,
+		logger:   h.logger,
+	}
 }
 
 func (ch *CreateResourceHandler) Handle() error {
@@ -156,7 +163,28 @@ func (uh *UpdateResourceHandler) SetObjects(old, new interface{}) {
 }
 
 func (dh *DeleteResourceHandler) Handle() error {
-	return nil
+	secret, ok := dh.oldValue.(*v1.Secret)
+	if !ok {
+		// TODO - add logging
+		return nil
+	}
+	u, err := getUpstreamFromSecret(secret)
+	if err != nil {
+		// its debatable if we should actually retry this work here again
+		// might be worth invalidating specific secrets and services
+		// TODO - add logging
+		return nil
+	}
+	err = dh.registry.UnregisterUpstream(u)
+	switch err {
+	case sql.ErrNoRows:
+		// TODO - add logging - continuing here is futile since we have hit a case where we are going to be unable
+		// to clean up from - log it and move on
+		return nil
+	default:
+		// potentially a transient error so retries within the limits are worth doing
+		return err
+	}
 }
 
 func (dh *DeleteResourceHandler) SetObject(object interface{}) {
