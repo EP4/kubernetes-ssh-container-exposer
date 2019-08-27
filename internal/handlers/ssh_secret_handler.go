@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/base64"
-
-	"go.uber.org/zap"
 
 	"github.com/EP4/kubernetes-ssh-container-exposer/internal/registry"
 	controller "github.com/EP4/kubernetes-ssh-container-exposer/pkg/kubernetes/secrets-controller"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
 	v1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,6 +39,9 @@ type (
 	}
 
 	UpdateResourceHandler struct {
+		client   kubernetes.Interface
+		registry registry.Registrable
+		logger   *zap.Logger
 		newValue interface{}
 		oldValue interface{}
 	}
@@ -65,7 +68,11 @@ func (h SSHSecretHandler) NewCreateHandler() controller.HandleCreate {
 }
 
 func (h SSHSecretHandler) NewUpdateHandler() controller.HandleUpdate {
-	return &UpdateResourceHandler{}
+	return &UpdateResourceHandler{
+		client:   h.client,
+		registry: h.registry,
+		logger:   h.logger,
+	}
 }
 
 func (h SSHSecretHandler) NewDeleteHandler() controller.HandleDelete {
@@ -110,7 +117,37 @@ func (ch *CreateResourceHandler) SetObject(object interface{}) {
 }
 
 func (uh *UpdateResourceHandler) Handle() error {
-	return nil
+	old, ok := uh.oldValue.(*v1.Secret)
+	if !ok {
+		return nil
+	}
+
+	new, ok := uh.newValue.(*v1.Secret)
+	if !ok {
+		return nil
+	}
+
+	if old.ResourceVersion != new.ResourceVersion {
+		service, err := getSSHService(new.Name, new.Namespace, uh.client)
+		if err != nil || service == nil {
+			// this is likely not worth retrying but might want to add some relevant logging
+			return nil
+		}
+
+		u, err := getUpstreamFromSecret(new)
+		if err != nil {
+			// its debatable if we should actually retry this work here again
+			// might be worth invalidating specific secrets and services
+			// TODO - add logging
+			return nil
+		}
+
+		u.Address = service.Spec.ClusterIP
+		return registerUpstream(uh.registry, u)
+	} else {
+		// nothing to do
+		return nil
+	}
 }
 
 func (uh *UpdateResourceHandler) SetObjects(old, new interface{}) {
@@ -175,4 +212,19 @@ func getSSHService(name, namespace string, client kubernetes.Interface) (*v1.Ser
 		return nil, nil
 	}
 	return service, nil
+}
+
+func getUpstreamFromSecret(s *v1.Secret) (*registry.Upstream, error) {
+	keys, err := parseSecretKeys(s)
+	if err != nil {
+		return nil, err
+	}
+
+	upstream := &registry.Upstream{
+		Name:                s.Name,
+		Username:            s.Name,
+		SSHPiperPrivateKey:  keys.SSHPiperPrivateKey,
+		DownstreamPublicKey: keys.DownstreamPublicKey,
+	}
+	return upstream, nil
 }
