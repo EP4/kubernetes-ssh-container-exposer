@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/base64"
+	"fmt"
 
 	"github.com/EP4/kubernetes-ssh-container-exposer/internal/registry"
 	controller "github.com/EP4/kubernetes-ssh-container-exposer/pkg/kubernetes/secrets-controller"
@@ -89,18 +90,16 @@ func (h SSHSecretHandler) NewDeleteHandler() controller.HandleDelete {
 func (ch *CreateResourceHandler) Handle() error {
 	secret, ok := ch.newValue.(*v1.Secret)
 	if !ok {
-		// failed type assertion here - something has gone wrong and retrying wont help - remove it from the queue
-		// TODO - add logging
-		return nil
+		return handleTypeAssertionError(ch.logger, ch.newValue)
 	}
 
 	service, err := getSSHService(secret.Name, secret.Namespace, ch.client)
 	if err != nil || service == nil {
-		// this is likely not worth retrying but might want to add some relevant logging
+		// //TODO - add logging - this is likely not worth retrying but might want to add some relevant logging
 		return nil
 	}
 
-	keys, err := parseSecretKeys(secret)
+	u, err := getUpstreamFromSecret(secret)
 	if err != nil {
 		// its debatable if we should actually retry this work here again
 		// might be worth invalidating specific secrets and services
@@ -108,15 +107,8 @@ func (ch *CreateResourceHandler) Handle() error {
 		return nil
 	}
 
-	upstream := &registry.Upstream{
-		Name:                secret.Name,
-		Username:            secret.Name,
-		Address:             service.Spec.ClusterIP,
-		SSHPiperPrivateKey:  keys.SSHPiperPrivateKey,
-		DownstreamPublicKey: keys.DownstreamPublicKey,
-	}
-
-	return registerUpstream(ch.registry, upstream)
+	u.Address = service.Spec.ClusterIP
+	return registerUpstream(ch.registry, u)
 }
 
 func (ch *CreateResourceHandler) SetObject(object interface{}) {
@@ -126,12 +118,12 @@ func (ch *CreateResourceHandler) SetObject(object interface{}) {
 func (uh *UpdateResourceHandler) Handle() error {
 	old, ok := uh.oldValue.(*v1.Secret)
 	if !ok {
-		return nil
+		return handleTypeAssertionError(uh.logger, uh.oldValue)
 	}
 
 	new, ok := uh.newValue.(*v1.Secret)
 	if !ok {
-		return nil
+		return handleTypeAssertionError(uh.logger, uh.newValue)
 	}
 
 	if old.ResourceVersion != new.ResourceVersion {
@@ -165,8 +157,7 @@ func (uh *UpdateResourceHandler) SetObjects(old, new interface{}) {
 func (dh *DeleteResourceHandler) Handle() error {
 	secret, ok := dh.oldValue.(*v1.Secret)
 	if !ok {
-		// TODO - add logging
-		return nil
+		return handleTypeAssertionError(dh.logger, dh.oldValue)
 	}
 	u, err := getUpstreamFromSecret(secret)
 	if err != nil {
@@ -255,4 +246,10 @@ func getUpstreamFromSecret(s *v1.Secret) (*registry.Upstream, error) {
 		DownstreamPublicKey: keys.DownstreamPublicKey,
 	}
 	return upstream, nil
+}
+
+func handleTypeAssertionError(l *zap.Logger, args ...interface{}) error {
+	err := fmt.Errorf("error when asserting type of Secret got %v", args)
+	l.Sugar().Error(err.Error())
+	return err
 }
