@@ -61,15 +61,15 @@ The following table lists the configurable parameters of the KSCE chart and thei
 
 | Parameter                   | Description                   | Default                                        |
 | --------------------------- | ----------------------------- | ---------------------------------------------- |
-| `image.repository`          | KSCE Image name               | `lightnet328/kubernetes-ssh-container-exposer` |
-| `image.tag`                 | KSCE Image tag                | `0.2.0`                                        |
-| `image.pullPolicy`          | Image pull policy             | `IfNotPresent`                                 |
+| `image.repository`          | KSCE Image name               | `mach4/kubernetes-ssh-container-exposer`       |
+| `image.tag`                 | KSCE Image tag                | `latest`                                       |
+| `image.pullPolicy`          | Image pull policy             | `Always`                                       |
 | `sshpiper.image.repository` | SSHPiper Image name           | `farmer1992/sshpiperd`                         |
 | `sshpiper.image.tag`        | SSHPiper Image tag            | `latest`                                       |
-| `sshpiper.image.pullPolicy` | Image pull policy             | `IfNotPresent`                                 |
-| `sshpiper.service.type`     | Kubernetes Service type       | `NodePort`                                     |
+| `sshpiper.image.pullPolicy` | Image pull policy             | `Always`                                       |
+| `sshpiper.service.type`     | Kubernetes Service type       | `LoadBalancer`                                 |
 | `sshpiper.service.port`     | Kubernetes Service port       | `2222`                                         |
-| `mysql.mysqlRootPassword`   | Password for the `root` user. | `9M0ujgwXes879BqQ`                             |
+| `mysql.mysqlRootPassword`   | Password for the `root` user. | `D7W626pOqa10766fA8qQxR2F`                     |
 
 ## Configuration on ssh container
 
