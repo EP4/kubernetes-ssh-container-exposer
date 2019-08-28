@@ -1,0 +1,16 @@
+version: '3.3'
+services:
+  mysql:
+    image: mysql:5.7.14
+    container_name: 'mysql'
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'sshpiper'
+      MYSQL_USER: 'root'
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'
+    volumes:
+      - ./initdb.sql:/docker-entrypoint-initdb.d/init.sql

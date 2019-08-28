@@ -1,171 +1,90 @@
 package main
 
 import (
-	"bytes"
-	"encoding/base64"
-	"log"
-	"time"
+	"flag"
+	"fmt"
+	"os"
+	"path/filepath"
 
-	"golang.org/x/crypto/ssh"
-	v1 "k8s.io/api/core/v1"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/EP4/kubernetes-ssh-container-exposer/internal/handlers"
+	internalLogger "github.com/EP4/kubernetes-ssh-container-exposer/internal/logger"
+	"github.com/EP4/kubernetes-ssh-container-exposer/internal/registry"
+	controller "github.com/philipgough/kube-kontroller"
+	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-
-	"go.uber.org/zap"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 var logger, _ = zap.NewDevelopment()
 
 const VERSION = "0.2.0"
-const SSHServicePort int32 = 22
 
-type Services []v1.Service
-type GroupedServices map[string]Services
-type Keys struct {
-	SSHPiperPrivateKey  string
-	DownstreamPublicKey []string
-}
-type ServiceKeys map[string]map[string]Keys
+func newClient(outOfCluster bool) (kubernetes.Interface, error) {
+	if !outOfCluster {
+		config, err := rest.InClusterConfig()
+		if err != nil {
+			return nil, err
+		}
 
-func newClient() (kubernetes.Interface, error) {
-	config, err := rest.InClusterConfig()
+		return kubernetes.NewForConfig(config)
+	}
+
+	homeDir := func() string {
+		if h := os.Getenv("HOME"); h != "" {
+			return h
+		}
+		return os.Getenv("USERPROFILE") // windows
+	}
+
+	var kubeconfig *string
+	if home := homeDir(); home != "" {
+		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	} else {
+		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+	}
+	flag.Parse()
+
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
-		return nil, err
+		panic(err.Error())
 	}
 
 	return kubernetes.NewForConfig(config)
 }
 
-func getServiceList(client kubernetes.Interface) (*v1.ServiceList, error) {
-	return client.CoreV1().Services("").List(meta_v1.ListOptions{})
-}
-
-func hasPort(servicePorts []v1.ServicePort, port int32) bool {
-	for _, servicePort := range servicePorts {
-		if servicePort.Port == port {
-			return true
-		}
-	}
-	return false
-}
-
-func filterSSHServices(services Services) Services {
-	var SSHServices Services
-	for _, service := range services {
-		if hasPort(service.Spec.Ports, SSHServicePort) {
-			SSHServices = append(SSHServices, service)
-			logger.Info("Service found", zap.String("name", service.Name), zap.String("namespace", service.Namespace))
-		}
-	}
-	return SSHServices
-}
-
-func groupByNamespace(services Services) GroupedServices {
-	groupedServices := GroupedServices{}
-	for _, service := range services {
-		groupedServices[service.Namespace] = append(groupedServices[service.Namespace], service)
-	}
-	return groupedServices
-}
-
-func getKeys(client kubernetes.Interface, namespace string, name string) (Keys, error) {
-	secret, err := client.CoreV1().Secrets(namespace).Get(name, meta_v1.GetOptions{})
-	if err != nil {
-		return Keys{}, err
-	}
-	var DownstreamPublicKeys []string
-	SecretDownstreamPublicKeys := bytes.Split(secret.Data["downstream_id_rsa.pub"], []byte("\n"))
-	for _, DownstreamPublicKey := range SecretDownstreamPublicKeys {
-		// logger.Info(string(DownstreamPublicKey[:]))
-		ByteDownstreamPublicKey, _, _, _, err := ssh.ParseAuthorizedKey(DownstreamPublicKey)
-		if err != nil {
-			// return Keys{}, err
-		} else {
-			DownstreamPublicKeys = append(DownstreamPublicKeys, base64.StdEncoding.EncodeToString(ByteDownstreamPublicKey.Marshal()))
-		}
-
-	}
-	if err != nil {
-		// return Keys{}, err
-	}
-	return Keys{
-		SSHPiperPrivateKey:  string(secret.Data["sshpiper_id_rsa"]),
-		DownstreamPublicKey: DownstreamPublicKeys,
-	}, nil
-}
-
-func getServiceKeys(client kubernetes.Interface, services GroupedServices) (ServiceKeys, error) {
-	serviceKeys := ServiceKeys{}
-	for namespace, services := range services {
-		serviceKeys[namespace] = map[string]Keys{}
-		for _, service := range services {
-			keys, err := getKeys(client, namespace, service.Name)
-			if err != nil {
-				return ServiceKeys{}, err
-			}
-			serviceKeys[namespace][service.Name] = keys
-		}
-	}
-	return serviceKeys, nil
-}
-
-func registerServices(registry *Registry, services GroupedServices, serviceKeys ServiceKeys) error {
-	for namespace, services := range services {
-		for i, service := range services {
-			keys := serviceKeys[namespace][service.Name]
-			_ = i
-			if _, err := registry.RegisterUpstream(&Upstream{
-				Name:                service.Name,
-				Username:            service.Name,
-				Address:             service.Spec.ClusterIP,
-				SSHPiperPrivateKey:  keys.SSHPiperPrivateKey,
-				DownstreamPublicKey: keys.DownstreamPublicKey,
-			}); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func initialize() error {
-	var services GroupedServices
-	registry := NewRegistry()
+func initializeRegistry() (*registry.Registry, error) {
+	registry := registry.NewRegistry(logger)
 	if err := registry.ConnectDatabase(); err != nil {
-		return err
+		return nil, err
 	}
 	if err := registry.TruncateAll(); err != nil {
-		return err
+		return nil, err
 	}
-
-	client, err := newClient()
-	if err != nil {
-		return err
-	}
-
-	serviceList, err := getServiceList(client)
-	if err != nil {
-		return err
-	}
-
-	services = groupByNamespace(filterSSHServices(serviceList.Items))
-	serviceKeys, err := getServiceKeys(client, services)
-	if err != nil {
-		return err
-	}
-	return registerServices(registry, services, serviceKeys)
-
+	return registry, nil
 }
 
 func main() {
 	logger.Info("Started", zap.String("version", VERSION))
+	logger.WithOptions()
 
-	for {
-		err := initialize()
-		if err != nil {
-			log.Fatal(err)
-		}
-		time.Sleep(10 * time.Second)
+	registry, err := initializeRegistry()
+	if err != nil {
+		logger.Fatal(fmt.Sprintf("failed to initialize registry - %v", err.Error()))
 	}
+
+	kubeClient, err := newClient(false)
+	if err != nil {
+		logger.Fatal(fmt.Sprintf("failed to create Kubernetes client - %v", err.Error()))
+	}
+
+	ctrlLogger := internalLogger.NewLogger(logger)
+
+	ctrl := controller.NewSecretController(kubeClient, controller.GetDefaultOptions(), controller.GetDefaultListOpts(), ctrlLogger)
+	ctrl.SetHandlerFactory(handlers.NewSecretHandler(kubeClient, registry, logger))
+
+	stopCh := make(chan struct{})
+	go ctrl.Run(stopCh)
+
+	<-stopCh
 }
