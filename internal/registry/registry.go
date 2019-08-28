@@ -219,7 +219,7 @@ func (r *Registry) UnregisterUpstream(upstream *Upstream) error {
 	// the verbosity of the code here. These functions are also expected to set sentinel errors from sql
 	// for no rows found so that the caller can make informed decisions on how they will handle the failure.
 
-	s, serverRec, err := r.getServerRecord(upstream.Address)
+	s, serverRec, err := r.getServerRecord(upstream.Name)
 	if err != nil {
 		return err
 	}
@@ -292,9 +292,9 @@ func (r *Registry) UnregisterUpstream(upstream *Upstream) error {
 	return nil
 }
 
-func (r *Registry) getServerRecord(address string) (*crud.Server, *crud.ServerRecord, error) {
+func (r *Registry) getServerRecord(name string) (*crud.Server, *crud.ServerRecord, error) {
 	s := crud.NewServer(r.database)
-	rec, err := s.GetFirstByAddress(address)
+	rec, err := s.GetFirstByName(name)
 	if err != nil {
 		return s, nil, err
 	}
