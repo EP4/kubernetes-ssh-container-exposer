@@ -3,24 +3,25 @@
 # Declare variables to be passed into your templates.
 
 image:
-  repository: lightnet328/kubernetes-ssh-container-exposer
-  tag: 0.2.0
-  pullPolicy: IfNotPresent
+  repository: mach4/kubernetes-ssh-container-exposer
+  tag: latest
+  pullPolicy: Always
 
 restartPolicy: Never
 
 sshpiper:
   image:
     repository: farmer1992/sshpiperd
-    tag: latest
-    pullPolicy: IfNotPresent
+    # tag: master
+    tag: v0.3.1
+    pullPolicy: Always
 
   service:
-    type: NodePort
+    type: LoadBalancer
     port: 2222
 
 mysql:
-  mysqlRootPassword: 9M0ujgwXes879BqQ
+  mysqlRootPassword: D7W626pOqa10766fA8qQxR2F
   mysqlDatabase: sshpiper
   initializationFiles:
     initdb.sql: |
