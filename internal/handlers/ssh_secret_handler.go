@@ -229,9 +229,9 @@ func getSSHService(name, namespace string, client kubernetes.Interface) (*v1.Ser
 		return nil, err
 	}
 
-	if !hasPort(service.Spec.Ports, SSHServicePort) {
-		return nil, nil
-	}
+	//if !hasPort(service.Spec.Ports, SSHServicePort) {
+	//	return nil, nil
+	//}
 	return service, nil
 }
 
