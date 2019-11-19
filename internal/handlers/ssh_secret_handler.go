@@ -17,6 +17,8 @@ import (
 
 const SSHServicePort int32 = 22
 
+var logger, _ = zap.NewDevelopment()
+
 type (
 	Services []v1.Service
 	Keys     struct {

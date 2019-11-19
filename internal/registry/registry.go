@@ -169,6 +169,8 @@ func (r *Registry) RegisterUpstream(upstream *Upstream) (*Upstream, error) {
 		}
 	}
 	if err != nil {
+		r.logger.Info("Error")
+		r.logger.Info(err.Error())
 		return nil, err
 	}
 
@@ -205,11 +207,16 @@ func (r *Registry) RegisterUpstream(upstream *Upstream) (*Upstream, error) {
 		// if err != nil {
 		// 	return nil, err
 		// }
-		r.logger.Info("########")
+		r.logger.Info("-")
 	}
 
 	r.logger.Info("Upstream registered", zap.String("name", upstream.Name), zap.String("username", upstream.Username))
 
+	if err != nil {
+		r.logger.Info("Error!")
+		r.logger.Info(err.Error())
+	}
+	
 	return nil, err
 }
 
