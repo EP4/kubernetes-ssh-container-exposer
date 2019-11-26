@@ -176,6 +176,7 @@ func (r *Registry) RegisterUpstream(upstream *Upstream) (*Upstream, error) {
 
 	for i := range upstream.DownstreamPublicKey {
 		r.logger.Info("New DownstreamPublicKey")
+		r.logger.Info(upstream.DownstreamPublicKey[i])
 		pub := crud.NewPublicKeys(r.database)
 		// if rec, err := pub.GetFirstByName(upstream.Name); err == nil {
 		// if rec != nil {
@@ -187,11 +188,13 @@ func (r *Registry) RegisterUpstream(upstream *Upstream) (*Upstream, error) {
 			r.logger.Info("Key Added")
 			r.logger.Info(upstream.DownstreamPublicKey[i])
 		} else {
+			r.logger.Info(err.Error())
 			err = pub.Rollback()
 		}
 		// }
 		// }
 		if err != nil {
+			r.logger.Info(err.Error())
 			return nil, err
 		}
 
