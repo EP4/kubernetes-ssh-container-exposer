@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "kubernetes-ssh-container-exposer.fullname" . }}-deployment
@@ -6,6 +6,9 @@ spec:
   replicas: 1
   strategy:
     type: Recreate
+  selector:
+    matchLabels:
+      app: {{ template "kubernetes-ssh-container-exposer.name" . }}
   template:
     metadata:
       name: {{ template "kubernetes-ssh-container-exposer.fullname" . }}
@@ -26,6 +29,6 @@ spec:
               value: {{ .Values.mysql.mysqlRootPassword }}
             - name: KSCE_MYSQL_PORT
               value: "$({{ template "mysql.port" . }})"
-          restartPolicy: {{ .Values.restartPolicy }}
+      restartPolicy: {{ .Values.restartPolicy }}
       imagePullSecrets:
       - name: dockerhub
