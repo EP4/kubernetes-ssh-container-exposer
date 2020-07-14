@@ -18,6 +18,7 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
     spec:
+      serviceAccountName: {{ template "kubernetes-ssh-container-exposer.fullname" . }}-serviceaccount
       containers:
         - name: {{ template "kubernetes-ssh-container-exposer.name" . }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
